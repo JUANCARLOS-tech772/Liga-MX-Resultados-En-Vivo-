@@ -17,16 +17,56 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 import { Match, AppSettings } from '../types';
 
-let app: FirebaseApp;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
+/**
+ * Valida si las credenciales de Firebase en el archivo de configuración son válidas y no marcadores de posición.
+ */
+export function isFirebaseConfigValid(): boolean {
+  if (!firebaseConfig) return false;
+  const apiKey = firebaseConfig.apiKey || '';
+  const projectId = firebaseConfig.projectId || '';
+  const appId = firebaseConfig.appId || '';
+
+  if (!apiKey || !projectId || !appId) return false;
+
+  // Si tiene placeholders o valores por defecto no válidos
+  if (
+    apiKey.includes('YOUR-') ||
+    apiKey.includes('<') ||
+    apiKey === 'placeholder' ||
+    projectId.includes('YOUR-') ||
+    projectId.includes('<') ||
+    projectId === 'placeholder' ||
+    appId.includes('YOUR-') ||
+    appId.includes('<') ||
+    appId === 'placeholder'
+  ) {
+    return false;
+  }
+  return true;
 }
 
-/* CRITICAL: The app will break without this line */
-export const db: Firestore = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
-export const auth: Auth = getAuth(app);
+export const configValid = isFirebaseConfigValid();
+
+let app: FirebaseApp | undefined;
+let dbInstance: Firestore | undefined;
+let authInstance: Auth | undefined;
+
+if (configValid) {
+  try {
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApps()[0];
+    }
+    dbInstance = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+    authInstance = getAuth(app);
+  } catch (err) {
+    console.warn('Error inicializando Firebase:', err);
+  }
+}
+
+export const db: Firestore = dbInstance as Firestore;
+export const auth: Auth = authInstance as Auth;
 
 export enum OperationType {
   CREATE = 'create',
@@ -58,12 +98,12 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+      userId: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      emailVerified: auth?.currentUser?.emailVerified,
+      isAnonymous: auth?.currentUser?.isAnonymous,
+      tenantId: auth?.currentUser?.tenantId,
+      providerInfo: auth?.currentUser?.providerData?.map(provider => ({
         providerId: provider.providerId,
         email: provider.email,
       })) || []
@@ -79,6 +119,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
  * Guarda o actualiza un partido completo en Firestore (Marcador, Minuto, Estado, Eventos, Estadísticas)
  */
 export async function saveMatchToFirestore(match: Match): Promise<boolean> {
+  if (!configValid || !db) return false;
   const pathForWrite = `matches/${match.id}`;
   try {
     const docRef = doc(db, 'matches', match.id);
@@ -98,6 +139,7 @@ export async function saveMatchToFirestore(match: Match): Promise<boolean> {
  * Guarda o actualiza múltiples partidos en Firestore
  */
 export async function saveMatchesToFirestore(matches: Match[]): Promise<boolean> {
+  if (!configValid || !db) return false;
   try {
     await Promise.all(matches.map(m => saveMatchToFirestore(m)));
     return true;
@@ -110,6 +152,7 @@ export async function saveMatchesToFirestore(matches: Match[]): Promise<boolean>
  * Elimina un partido de Firestore
  */
 export async function deleteMatchFromFirestore(matchId: string): Promise<boolean> {
+  if (!configValid || !db) return false;
   const pathForDelete = `matches/${matchId}`;
   try {
     const docRef = doc(db, 'matches', matchId);
@@ -125,6 +168,7 @@ export async function deleteMatchFromFirestore(matchId: string): Promise<boolean
  * Escucha cambios en todos los partidos desde Firestore en tiempo real
  */
 export function subscribeToFirestoreMatches(onUpdate: (matches: Match[]) => void): () => void {
+  if (!configValid || !db) return () => {};
   const pathForOnSnapshot = 'matches';
   try {
     const colRef = collection(db, 'matches');
@@ -152,6 +196,7 @@ export function subscribeToFirestoreMatches(onUpdate: (matches: Match[]) => void
  * Guarda o actualiza el escudo de base de un equipo en Firestore
  */
 export async function saveTeamBadgeToFirestore(teamId: string, badgeUrl: string): Promise<boolean> {
+  if (!configValid || !db) return false;
   const pathForWrite = `teamBadges/${teamId}`;
   try {
     const docRef = doc(db, 'teamBadges', teamId);
@@ -171,6 +216,7 @@ export async function saveTeamBadgeToFirestore(teamId: string, badgeUrl: string)
  * Escucha cambios en los escudos de los equipos desde Firestore
  */
 export function subscribeToFirestoreBadges(onUpdate: (badges: Record<string, string>) => void): () => void {
+  if (!configValid || !db) return () => {};
   const pathForOnSnapshot = 'teamBadges';
   try {
     const colRef = collection(db, 'teamBadges');
@@ -196,6 +242,7 @@ export function subscribeToFirestoreBadges(onUpdate: (badges: Record<string, str
  * Guarda configuración global de la app en Firestore
  */
 export async function saveSettingsToFirestore(settings: Partial<AppSettings>): Promise<boolean> {
+  if (!configValid || !db) return false;
   const pathForWrite = `settings/general`;
   try {
     const docRef = doc(db, 'settings', 'general');
@@ -214,6 +261,7 @@ export async function saveSettingsToFirestore(settings: Partial<AppSettings>): P
  * Escucha configuración global desde Firestore
  */
 export function subscribeToFirestoreSettings(onUpdate: (settings: Partial<AppSettings>) => void): () => void {
+  if (!configValid || !db) return () => {};
   const pathForOnSnapshot = 'settings/general';
   try {
     const docRef = doc(db, 'settings', 'general');

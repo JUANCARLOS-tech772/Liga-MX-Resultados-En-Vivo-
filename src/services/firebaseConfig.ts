@@ -1,5 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getDatabase, Database, ref, onValue, set, update } from 'firebase/database';
+import { isFirebaseConfigValid } from './firebaseFirestore';
 
 export interface FirebaseCustomConfig {
   apiKey?: string;
@@ -26,6 +27,9 @@ let firebaseApp: FirebaseApp | null = null;
 let firebaseDb: Database | null = null;
 
 export function initFirebase(customConfig?: FirebaseCustomConfig): Database | null {
+  if (!isFirebaseConfigValid()) {
+    return null;
+  }
   const config = { ...envConfig, ...customConfig };
 
   if (!config.databaseURL && !config.projectId) {

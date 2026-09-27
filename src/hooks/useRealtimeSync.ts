@@ -2,21 +2,22 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { Team, Match, AppSettings, GoalAlertPayload } from '../types';
 import { TEAMS_DATA } from '../teamsData';
+import { APERTURA_2026_MATCHES } from '../fixturesApertura2026';
 import { soundEffects } from '../services/soundEffects';
 import { showNativeGoalNotification, getNotificationPermission, isNotificationsEnabled, isMatchNotificationEnabled } from '../services/notifications';
 import { subscribeToFirebaseMatches } from '../services/firebaseConfig';
-import { subscribeToFirestoreBadges, subscribeToFirestoreMatches } from '../services/firebaseFirestore';
+import { subscribeToFirestoreBadges, subscribeToFirestoreMatches, isFirebaseConfigValid } from '../services/firebaseFirestore';
 
 export function useRealtimeSync() {
   const [teams, setTeams] = useState<Record<string, Team>>(TEAMS_DATA);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] = useState<Match[]>(APERTURA_2026_MATCHES);
   const [settings, setSettings] = useState<AppSettings>({
     showAdminToPublic: true,
     lastApiSync: new Date().toISOString(),
     apiStatus: 'active',
     connectedClients: 1
   });
-  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [isConnected, setIsConnected] = useState<boolean>(() => !isFirebaseConfigValid());
   const [activeGoalAlert, setActiveGoalAlert] = useState<GoalAlertPayload | null>(null);
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
 
