@@ -5,8 +5,6 @@ import { TEAMS_DATA } from '../teamsData';
 import { APERTURA_2026_MATCHES } from '../fixturesApertura2026';
 import { soundEffects } from '../services/soundEffects';
 import { showNativeGoalNotification, getNotificationPermission, isNotificationsEnabled, isMatchNotificationEnabled } from '../services/notifications';
-import { subscribeToFirebaseMatches } from '../services/firebaseConfig';
-import { subscribeToFirestoreBadges, subscribeToFirestoreMatches, isFirebaseConfigValid } from '../services/firebaseFirestore';
 
 export function useRealtimeSync() {
   const [teams, setTeams] = useState<Record<string, Team>>(TEAMS_DATA);
@@ -17,7 +15,7 @@ export function useRealtimeSync() {
     apiStatus: 'active',
     connectedClients: 1
   });
-  const [isConnected, setIsConnected] = useState<boolean>(() => !isFirebaseConfigValid());
+  const [isConnected, setIsConnected] = useState<boolean>(true);
   const [activeGoalAlert, setActiveGoalAlert] = useState<GoalAlertPayload | null>(null);
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
 
@@ -274,35 +272,6 @@ export function useRealtimeSync() {
     fetchInitialData();
     connectSSE();
 
-    // Sincronizar escudos de equipos en tiempo real con Firestore
-    const unsubBadges = subscribeToFirestoreBadges((customBadges) => {
-      if (customBadges && Object.keys(customBadges).length > 0) {
-        setTeams((prev) => {
-          const updated = { ...prev };
-          for (const [id, url] of Object.entries(customBadges)) {
-            if (updated[id]) {
-              updated[id] = { ...updated[id], badgeUrl: url };
-            }
-          }
-          return updated;
-        });
-      }
-    });
-
-    // Sincronizar partidos en tiempo real desde Firestore
-    const unsubFirestoreMatches = subscribeToFirestoreMatches((fsMatches) => {
-      if (fsMatches && fsMatches.length > 0) {
-        setMatches(fsMatches);
-      }
-    });
-
-    // También escuchar Firebase RTDB si está configurado
-    const unsubFirebase = subscribeToFirebaseMatches((fbMatches) => {
-      if (fbMatches && fbMatches.length > 0) {
-        setMatches(fbMatches);
-      }
-    });
-
     // Registrar Service Worker para notificaciones en segundo plano
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -320,9 +289,6 @@ export function useRealtimeSync() {
         eventSourceRef.current.close();
       }
       clearTimeout(reconnectTimeoutRef.current);
-      if (unsubFirebase) unsubFirebase();
-      if (unsubBadges) unsubBadges();
-      if (unsubFirestoreMatches) unsubFirestoreMatches();
     };
   }, [fetchInitialData, connectSSE]);
 

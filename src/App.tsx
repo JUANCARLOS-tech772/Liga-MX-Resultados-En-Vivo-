@@ -10,7 +10,6 @@ import { GoalToast } from './components/GoalToast';
 import { MatchDetailModal } from './components/MatchDetailModal';
 import { NotificationSettings } from './components/NotificationSettings';
 import { useRealtimeSync } from './hooks/useRealtimeSync';
-import { isFirebaseConfigValid } from './services/firebaseFirestore';
 import { Match } from './types';
 import { WifiOff, RefreshCw, Shield, Sparkles } from 'lucide-react';
 
@@ -49,7 +48,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0b0e14] text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
       {/* Offline Alert Banner */}
-      {!isConnected && isFirebaseConfigValid() && (
+      {!isConnected && (
         <div className="bg-amber-600/90 text-white text-xs font-bold py-1 px-4 text-center flex items-center justify-center gap-2">
           <WifiOff className="w-3.5 h-3.5 animate-pulse" />
           <span>Modo Reconexión: Restaurando conexión en tiempo real con el servidor central...</span>
