@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "Match": {
+      "title": "Match",
+      "description": "Partido de fútbol de la Liga MX con marcador en vivo y estadísticas",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "jornada": { "type": "number" },
+        "homeTeamId": { "type": "string", "maxLength": 64 },
+        "awayTeamId": { "type": "string", "maxLength": 64 },
+        "homeScore": { "type": "number" },
+        "awayScore": { "type": "number" },
+        "status": { "type": "string", "enum": ["SCHEDULED", "LIVE", "HALFTIME", "FINISHED"] },
+        "minute": { "type": "number" },
+        "period": { "type": "string", "maxLength": 32 },
+        "stadium": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 64 },
+        "time": { "type": "string", "maxLength": 32 },
+        "isManualOverride": { "type": "boolean" },
+        "lastUpdated": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "homeTeamId", "awayTeamId", "homeScore", "awayScore", "status", "minute"]
+    },
+    "TeamBadge": {
+      "title": "TeamBadge",
+      "description": "Escudo de base oficial o personalizado para un equipo de la Liga MX",
+      "type": "object",
+      "properties": {
+        "teamId": { "type": "string", "maxLength": 64 },
+        "badgeUrl": { "type": "string", "maxLength": 2048 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["teamId", "badgeUrl"]
+    },
+    "AppSetting": {
+      "title": "AppSetting",
+      "description": "Configuraciones globales de visibilidad y sincronización de la aplicación",
+      "type": "object",
+      "properties": {
+        "showAdminToPublic": { "type": "boolean" },
+        "lastApiSync": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["showAdminToPublic"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Usuario administrador autorizado para modificar marcadores",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "superadmin"] },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/Match" },
+      "description": "Partidos de la Liga MX accesibles públicamente en tiempo real"
+    },
+    "/teamBadges/{teamId}": {
+      "schema": { "$ref": "#/entities/TeamBadge" },
+      "description": "Escudos personalizados o actualizados de los equipos de la Liga MX"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/AppSetting" },
+      "description": "Configuraciones de la app como visibilidad del panel admin"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Lista de administradores autorizados"
+    }
+  }
+}

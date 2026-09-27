@@ -1,0 +1,6 @@
+{
+  "name": "Liga MX En Vivo - Marcadores en Tiempo Real",
+  "description": "Resultados en vivo, marcadores en tiempo real, calendario y panel de administración para la Liga MX.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

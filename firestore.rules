@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Partidos en tiempo real (Lectura y Control Total)
+    match /matches/{matchId} {
+      allow read: if isValidId(matchId);
+      allow write: if isValidId(matchId);
+    }
+
+    // Escudos oficiales y personalizados de los 18 clubes
+    match /teamBadges/{teamId} {
+      allow read: if isValidId(teamId);
+      allow write: if isValidId(teamId);
+    }
+
+    // Configuración general de la app (visibilidad, temporizador, etc.)
+    match /settings/{settingId} {
+      allow read: if isValidId(settingId);
+      allow write: if isValidId(settingId);
+    }
+
+    // Lista de administradores autorizados
+    match /admins/{adminId} {
+      allow read, write: if isValidId(adminId);
+    }
+  }
+}
